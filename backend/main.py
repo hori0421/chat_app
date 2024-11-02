@@ -77,13 +77,17 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Firebase Admin SDKの初期化
-cred = credentials.Certificate('tutorial-598c5-firebase-adminsdk-fh15k-6b42e7c6a9.json')
-firebase_admin.initialize_app(cred)
+# Firebase Admin SDKの初期化を修正
+try:
+    # 環境変数のパスから認証情報を読み込む
+    cred = credentials.Certificate('firebase-credentials.json')
+    firebase_admin.initialize_app(cred)
+    logger.info("Successfully initialized Firebase with credentials")
+except Exception as e:
+    logger.error(f"Firebase initialization error: {e}")
+    raise
 
 db = firestore.client()
-
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
     
 class UserData(BaseModel):
     user_id: str
@@ -146,6 +150,7 @@ async def get_completion(data: UserData):
         }
         logger.info(f"Payload: {payload}")
         url = f"{BASE_URL}/chat-messages"
+        logger.info(f"API_KEY: {API_KEY}")
         headers = {
             "Authorization": f"Bearer {API_KEY}",
             "Content-Type": "application/json"
@@ -272,5 +277,19 @@ router = APIRouter()
 app.include_router(router)
 
 if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    try:
+        import uvicorn
+        port = int(os.getenv("PORT", "8080"))
+        logger.info(f"Starting server on port {port}")
+        uvicorn.run(
+            "main:app",
+            host="0.0.0.0",
+            port=port,
+            reload=False,
+            workers=1,
+            access_log=True,
+            log_level="info"
+        )
+    except Exception as e:
+        logger.critical(f"Failed to start server: {str(e)}", exc_info=True)
+        raise

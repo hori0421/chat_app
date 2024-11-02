@@ -1,10 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { MessageBubble } from './components/MessageBubble';
-import { ChatInput } from './components/ChatInput';
-import { MessageCircle, PlusCircle } from 'lucide-react';
-import LoadingSpinner from './components/LoadingSpinner';
-import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, User } from "firebase/auth";
+import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged } from "firebase/auth";
 import { initializeApp } from "firebase/app";
 import Header from './components/Header';
 import Footer from './components/Footer';
@@ -12,7 +8,7 @@ import ChatLog from './components/ChatLog';
 
 // Firebaseの設定
 const firebaseConfig = {
-  apiKey: process.env.REACT_APP_FIREBASE_API_KEY,
+  apiKey: "AIzaSyCIIjX5X2gIax_klqwsu6mqDneOg-AovR8",
   authDomain: "tutorial-598c5.firebaseapp.com",
   projectId: "tutorial-598c5",
   storageBucket: "tutorial-598c5.appspot.com",
@@ -20,6 +16,9 @@ const firebaseConfig = {
   appId: "1:755922303290:web:b398d808cbb31b49087803",
   measurementId: "G-FCW364SLXK"
 };
+
+// backendのURL
+const backend_url = 'https://backend-755922303290.asia-northeast1.run.app/';
 
 // Firebaseアプリの初期化
 initializeApp(firebaseConfig);
@@ -78,7 +77,7 @@ function App() {
   const fetchHistory = async (user_id: string, session_id: string | undefined = undefined) => {
     try {
       if (!session_id) {
-        const response = await axios.post('http://localhost:8000/history_latest', { user_id: user_id });
+        const response = await axios.post(backend_url + 'history_latest', { user_id: user_id });
         setUserData((prevUserData) => ({
           ...prevUserData,
           session_id: response.data.session_id,
@@ -86,7 +85,7 @@ function App() {
         }));
         setMessages(response.data.history);
       } else {
-        const response = await axios.post('http://localhost:8000/history', { user_id: user_id, session_id: session_id });
+        const response = await axios.post(backend_url + 'history', { user_id: user_id, session_id: session_id });
         setMessages(response.data.history);
       }
     } catch (error) {
@@ -103,9 +102,9 @@ function App() {
         return;
       }
 
-      await axios.post('http://localhost:8000/insert_user_prompt', { user_id: userData.user_id, session_id: userData.session_id, user_prompt: message }, { headers: { "Content-Type": "application/json" } });
+      await axios.post(backend_url + 'insert_user_prompt', { user_id: userData.user_id, session_id: userData.session_id, user_prompt: message }, { headers: { "Content-Type": "application/json" } });
       await fetchHistory(userData.user_id, userData.session_id);
-      const response = await axios.post('http://localhost:8000/get_completion', { user_id: userData.user_id, session_id: userData.session_id }, { headers: { "Content-Type": "application/json" } });
+      const response = await axios.post(backend_url + 'get_completion', { user_id: userData.user_id, session_id: userData.session_id }, { headers: { "Content-Type": "application/json" } });
       await fetchHistory(userData.user_id, userData.session_id);
       setLoading(false);
     } catch (error) {
@@ -134,7 +133,7 @@ function App() {
     if (userData) {
       // 新しいセッションを作成
       console.log(userData);
-      const new_session_id = await axios.post('http://localhost:8000/new_chat', { user_id: userData.user_id });
+      const new_session_id = await axios.post(backend_url + 'new_chat', { user_id: userData.user_id });
       setUserData((prevUserData) => ({
           ...prevUserData,
           session_id: new_session_id.data.session_id,

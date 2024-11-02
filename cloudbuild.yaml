@@ -1,0 +1,27 @@
+steps:
+  # Firebase認証情報とDify APIキーを取得
+  - name: 'gcr.io/cloud-builders/gcloud'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        gcloud secrets versions access latest --secret=firebase-credentials > /workspace/firebase-credentials.json
+        gcloud secrets versions access latest --secret=dify-api-key > /workspace/dify_key.txt
+    id: 'get-secrets'
+
+  # Dockerビルド
+  - name: 'gcr.io/cloud-builders/docker'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        dify_key=$(cat /workspace/dify_key.txt)
+        docker build \
+          -t gcr.io/$PROJECT_ID/backend \
+          --build-arg FIREBASE_CREDENTIALS=firebase-credentials.json \
+          --build-arg DIFY_API_KEY="$dify_key" \
+          .
+    id: 'docker-build'
+
+images:
+  - 'gcr.io/$PROJECT_ID/backend'
